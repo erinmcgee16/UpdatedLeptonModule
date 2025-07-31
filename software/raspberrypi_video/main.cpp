@@ -121,9 +121,9 @@ int main( int argc, char **argv )
 	myLabel.setPixmap(QPixmap::fromImage(myImage));
 
 	//create temperature display label
-	QLabel *tempLabel = new QLabel("Max Temp: -- °C", myWidget);
-	tempLabel->setGeometry(10, 255, 200, 25);
-	tempLabel->setStyleSheet("QLabel { color: white; background-color: black; padding: 5px; font-weight: bold; }");
+	QLabel *tempLabel = new QLabel("Max Temp: -- C", myWidget);
+	tempLabel->setGeometry(10, 255, 320, 25);
+	tempLabel->setStyleSheet("QLabel { color: white; background-color: black; padding: 3px; font-weight: bold; }");
 
 	//create a FFC button
 	QPushButton *button1 = new QPushButton("Perform FFC", myWidget);
