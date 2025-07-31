@@ -102,7 +102,7 @@ int main( int argc, char **argv )
 	QApplication a( argc, argv );
 	
 	QWidget *myWidget = new QWidget;
-	myWidget->setGeometry(400, 300, 340, 290);
+	myWidget->setGeometry(400, 300, 340, 330); // Made taller to accommodate temperature display
 
 	//create an image placeholder for myLabel
 	//fill the top left corner with red, just bcuz
@@ -120,9 +120,14 @@ int main( int argc, char **argv )
 	myLabel.setGeometry(10, 10, 320, 240);
 	myLabel.setPixmap(QPixmap::fromImage(myImage));
 
+	//create temperature display label
+	QLabel *tempLabel = new QLabel("Max Temp: -- °C", myWidget);
+	tempLabel->setGeometry(10, 255, 200, 25);
+	tempLabel->setStyleSheet("QLabel { color: white; background-color: black; padding: 5px; font-weight: bold; }");
+
 	//create a FFC button
 	QPushButton *button1 = new QPushButton("Perform FFC", myWidget);
-	button1->setGeometry(320/2-50, 290-35, 100, 30);
+	button1->setGeometry(320/2-50, 330-35, 100, 30); // Adjusted position
 
 	//create a thread to gather SPI data
 	//when the thread emits updateImage, the label should update its image accordingly
@@ -135,6 +140,9 @@ int main( int argc, char **argv )
 	if (0 <= rangeMin) thread->useRangeMinValue(rangeMin);
 	if (0 <= rangeMax) thread->useRangeMaxValue(rangeMax);
 	QObject::connect(thread, SIGNAL(updateImage(QImage)), &myLabel, SLOT(setImage(QImage)));
+	
+	// Connect temperature update signal
+	QObject::connect(thread, SIGNAL(updateTemperature(QString)), tempLabel, SLOT(setText(QString)));
 	
 	//connect ffc button to the thread's ffc action
 	QObject::connect(button1, SIGNAL(clicked()), thread, SLOT(performFFC()));
