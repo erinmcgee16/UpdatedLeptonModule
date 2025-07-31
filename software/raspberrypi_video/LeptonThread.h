@@ -1,64 +1,56 @@
-#ifndef TEXTTHREAD
-#define TEXTTHREAD
+#ifndef LEPTONTHREAD_H
+#define LEPTONTHREAD_H
 
-#include <ctime>
-#include <stdint.h>
-
+#include <cstdint>
 #include <QThread>
-#include <QtCore>
+#include <QtGui>
 #include <QPixmap>
 #include <QImage>
 
-#define PACKET_SIZE 164
-#define PACKET_SIZE_UINT16 (PACKET_SIZE/2)
-#define PACKETS_PER_FRAME 60
-#define FRAME_SIZE_UINT16 (PACKET_SIZE_UINT16*PACKETS_PER_FRAME)
-
 class LeptonThread : public QThread
 {
-  Q_OBJECT;
+	Q_OBJECT;
 
 public:
-  LeptonThread();
-  ~LeptonThread();
+	LeptonThread();
+	~LeptonThread();
 
-  void setLogLevel(uint16_t);
-  void useColormap(int);
-  void useLepton(int);
-  void useSpiSpeedMhz(unsigned int);
-  void setAutomaticScalingRange();
-  void useRangeMinValue(uint16_t);
-  void useRangeMaxValue(uint16_t);
-  void run();
-
-public slots:
-  void performFFC();
-
-signals:
-  void updateText(QString);
-  void updateImage(QImage);
+	void setLogLevel(uint16_t newLoglevel);
+	void useColormap(int newTypeColormap);
+	void useLepton(int newTypeLepton);
+	void useSpiSpeedMhz(unsigned int newSpiSpeed);
+	void setAutomaticScalingRange();
+	void useRangeMinValue(uint16_t newMinValue);
+	void useRangeMaxValue(uint16_t newMaxValue);
 
 private:
+	void run();
+	void log_message(uint16_t level, std::string msg);
+	double rawToTemperature(uint16_t rawValue); // Convert raw value to temperature in Celsius
 
-  void log_message(uint16_t, std::string);
-  uint16_t loglevel;
-  int typeColormap;
-  const int *selectedColormap;
-  int selectedColormapSize;
-  int typeLepton;
-  unsigned int spiSpeed;
-  bool autoRangeMin;
-  bool autoRangeMax;
-  uint16_t rangeMin;
-  uint16_t rangeMax;
-  int myImageWidth;
-  int myImageHeight;
-  QImage myImage;
+	QImage myImage;
 
-  uint8_t result[PACKET_SIZE*PACKETS_PER_FRAME];
-  uint8_t shelf[4][PACKET_SIZE*PACKETS_PER_FRAME];
-  uint16_t *frameBuffer;
+	uint8_t result[164*60];
+	uint8_t shelf[4][164*60];
+	uint16_t loglevel;
+	const int *selectedColormap;
+	int selectedColormapSize;
+	int typeColormap;
+	int typeLepton;
+	int myImageWidth;
+	int myImageHeight;
+	int spiSpeed;
+	bool autoRangeMin;
+	bool autoRangeMax;
+	uint16_t rangeMin;
+	uint16_t rangeMax;
 
+public slots:
+	void performFFC();
+
+signals:
+	void updateImage(QImage);
+	void updateTemperature(QString); // New signal for temperature updates
 };
 
-#endif
+#endif // LEPTONTHREAD_H
