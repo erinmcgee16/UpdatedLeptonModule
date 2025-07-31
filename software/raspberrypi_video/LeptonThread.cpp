@@ -104,6 +104,15 @@ void LeptonThread::useRangeMaxValue(uint16_t newMaxValue)
 	rangeMax = newMaxValue;
 }
 
+// Convert raw Lepton value to temperature in Celsius
+// For Lepton 3.5, the conversion is: Temperature = (raw_value / 100.0) - 273.15
+double LeptonThread::rawToTemperature(uint16_t rawValue)
+{
+	// Lepton 3.5 provides temperature in Kelvin * 100
+	// Convert to Celsius: (raw/100) - 273.15
+	return (rawValue / 100.0) - 273.15;
+}
+
 void LeptonThread::run()
 {
 	//create the initial image
@@ -187,9 +196,11 @@ void LeptonThread::run()
 			iSegmentStop = 1;
 		}
 
+		uint16_t currentMaxValue = 0; // Track max value for temperature display
+
 		if ((autoRangeMin == true) || (autoRangeMax == true)) {
 			if (autoRangeMin == true) {
-				maxValue = 65535;
+				minValue = 65535;
 			}
 			if (autoRangeMax == true) {
 				maxValue = 0;
@@ -217,6 +228,26 @@ void LeptonThread::run()
 			}
 			diff = maxValue - minValue;
 			scale = 255/diff;
+			currentMaxValue = maxValue;
+		} else {
+			// When not using auto range, still find the actual max value for temperature display
+			for(int iSegment = iSegmentStart; iSegment <= iSegmentStop; iSegment++) {
+				for(int i=0;i<FRAME_SIZE_UINT16;i++) {
+					//skip the first 2 uint16_t's of every packet, they're 4 header bytes
+					if(i % PACKET_SIZE_UINT16 < 2) {
+						continue;
+					}
+
+					//flip the MSB and LSB at the last second
+					uint16_t value = (shelf[iSegment - 1][i*2] << 8) + shelf[iSegment - 1][i*2+1];
+					if (value == 0) {
+						continue;
+					}
+					if (value > currentMaxValue) {
+						currentMaxValue = value;
+					}
+				}
+			}
 		}
 
 		int row, column;
@@ -265,6 +296,15 @@ void LeptonThread::run()
 			n_zero_value_drop_frame = 0;
 		}
 
+		// Convert max value to temperature and emit signal
+		if (currentMaxValue > 0) {
+			double maxTemp = rawToTemperature(currentMaxValue);
+			QString tempString = QString("Max Temp: %1 °C (Raw: %2)")
+								.arg(maxTemp, 0, 'f', 1)
+								.arg(currentMaxValue);
+			emit updateTemperature(tempString);
+		}
+
 		//lets emit the signal for update
 		emit updateImage(myImage);
 	}
@@ -284,4 +324,3 @@ void LeptonThread::log_message(uint16_t level, std::string msg)
 		std::cerr << msg << std::endl;
 	}
 }
-
